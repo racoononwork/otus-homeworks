@@ -39,7 +39,7 @@ if(WITH_BOOST_TEST)
     add_executable(test_version tests/test_version.cpp)
 
     set_target_properties(test_version PROPERTIES
-            CXX_STANDARD 14
+            CXX_STANDARD 23
             CXX_STANDARD_REQUIRED ON
     )
     target_include_directories(test_version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
