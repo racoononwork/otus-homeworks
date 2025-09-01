@@ -13,7 +13,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
+      - run: sudo apt-get update && sudo apt-get install libboost-test-dev g++-14 -y
+      - run: sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+      - run: sudo update-alternatives --config g++
       - run: cmake -B build -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
       - run: cmake --build build
       - run: cmake --build build --target test
