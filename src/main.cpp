@@ -1,6 +1,6 @@
 #include "include/lib.h"
 
-#include <println>
+#include <print>
 
 int main(int, char **) {
 	std::println("Version: {}\nHello, world!", version());
