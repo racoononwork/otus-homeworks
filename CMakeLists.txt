@@ -14,8 +14,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(WITH_UNIT_TESTS "Build unit tests (uses GoogleTest)" ON)
 
-add_library(${PROJECT_NAME} STATIC src/ip_filter.cpp
-        src/main.cpp)
+add_library(${PROJECT_NAME} STATIC src/ip_filter.cpp)
+
+include(FetchContent)
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.15.3
+)
+FetchContent_MakeAvailable(spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog_header_only)
+
 add_executable(${PROJECT_NAME}_cli src/main.cpp)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
@@ -34,14 +43,6 @@ target_include_directories(${PROJECT_NAME}_cli
 
 target_link_libraries(${PROJECT_NAME}_cli PRIVATE ${PROJECT_NAME})
 
-include(FetchContent)
-FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.15.3
-)
-FetchContent_MakeAvailable(spdlog)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog_header_only)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME}_cli PRIVATE /W4)
