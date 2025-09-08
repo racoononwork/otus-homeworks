@@ -23,7 +23,7 @@ FetchContent_Declare(
         GIT_TAG v1.15.3
 )
 FetchContent_MakeAvailable(spdlog)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog_header_only)
+target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
 add_executable(${PROJECT_NAME}_cli src/main.cpp)
 
