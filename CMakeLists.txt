@@ -23,7 +23,7 @@ FetchContent_Declare(
         GIT_TAG v1.15.3
 )
 FetchContent_MakeAvailable(spdlog)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 
 add_executable(${PROJECT_NAME}_cli src/main.cpp)
 
@@ -41,7 +41,7 @@ target_include_directories(${PROJECT_NAME}_cli
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME}_cli PRIVATE ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}_cli PRIVATE ${PROJECT_NAME} spdlog::spdlog)
 
 
 if(MSVC)
@@ -67,7 +67,7 @@ if(WITH_UNIT_TESTS)
     FetchContent_MakeAvailable(googletest)
 
     add_executable(test_version tests/test_version.cpp)
-    target_link_libraries(test_version PRIVATE gtest_main ${PROJECT_NAME})
+    target_link_libraries(test_version PRIVATE gtest_main ${PROJECT_NAME} spdlog::spdlog)
     target_include_directories(test_version PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
     if(MSVC)
