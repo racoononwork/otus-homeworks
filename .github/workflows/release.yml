@@ -4,41 +4,84 @@ on:
   push:
     branches:
       - main
-      - feature/github_actions
+      - 'feature/**' # Also run on feature branches
 
 jobs:
-  build:
+  # Job 1: Build the code and run tests 🧪
+  build_and_test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
     steps:
-      - uses: actions/checkout@v2
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - run: sudo apt-get update && sudo apt-get install libboost-test-dev g++-14 -y
-      - run: sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-      - run: sudo update-alternatives --config g++
-      - run: cmake -B build -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
-      - run: cmake --build build
-      - run: cmake --build build --target test
-      - run: cmake --build build --target package
-      - name: Create Release
+
+      - name: 'Install dependencies'
+        run: sudo apt-get update && sudo apt-get install -y g++-14
+
+      - name: 'Configure CMake'
+        env:
+          # Set g++-14 as the compiler for this workflow
+          CXX: g++-14
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPATCH_VERSION=${{ github.run_number }} \
+            -DWITH_UNIT_TESTS=ON
+
+      - name: 'Build project'
+        run: cmake --build build
+
+      - name: 'Run tests'
+        run: cmake --build build --target test
+
+      - name: 'Package application'
+        run: cmake --build build --target package
+
+      - name: 'Upload artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: ./build/ip_filter-*-Linux.deb # Use a wildcard to match the generated file name
+
+  # Job 2: Create a release if tests pass on the main branch 🚀
+  release:
+    # This job needs the first one to succeed
+    needs: build_and_test
+    # Only run on pushes to the main branch
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create a release
+
+    steps:
+      - name: 'Download artifact'
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+
+      - name: 'Get package name'
+        id: get_package_name
+        run: echo "PACKAGE_NAME=$(ls *.deb)" >> $GITHUB_OUTPUT
+
+      - name: 'Create Release'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
+
+      - name: 'Upload Release Asset'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/helloworld-0.0.${{ github.run_number }}-Linux.deb
-          asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_path: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
+          asset_name: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
           asset_content_type: application/vnd.debian.binary-package

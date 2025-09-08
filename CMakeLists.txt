@@ -1,95 +1,91 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
+
+project(ip_filter
+        VERSION 0.0.1
+        LANGUAGES CXX)
 
 set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH ${PATCH_VERSION})
 
-project(helloworld VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(WITH_BOOST_TEST "Whether to build Boost test" ON)
+option(WITH_UNIT_TESTS "Build unit tests (uses GoogleTest)" ON)
 
-configure_file(include/version.h.in include/version.h)
+add_library(${PROJECT_NAME} STATIC src/ip_filter.cpp
+        src/main.cpp)
+add_executable(${PROJECT_NAME}_cli src/main.cpp)
 
-add_executable(helloworld_cli src/main.cpp)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
+target_compile_features(${PROJECT_NAME}_cli PUBLIC cxx_std_23)
 
-add_library(helloworld src/lib.cpp)
-
-set_target_properties(helloworld_cli helloworld PROPERTIES
-        CXX_STANDARD 23
-        CXX_STANDARD_REQUIRED ON
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-
-target_include_directories(helloworld
-        PRIVATE "${CMAKE_BINARY_DIR}" ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(${PROJECT_NAME}_cli
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_include_directories(helloworld_cli
-        PRIVATE "${CMAKE_BINARY_DIR}" ${CMAKE_CURRENT_SOURCE_DIR}
-)
+target_link_libraries(${PROJECT_NAME}_cli PRIVATE ${PROJECT_NAME})
 
-target_link_libraries(helloworld_cli PRIVATE
-        helloworld
+include(FetchContent)
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.15.3
 )
+FetchContent_MakeAvailable(spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog_header_only)
 
-if(WITH_BOOST_TEST)
-    find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME}_cli PRIVATE /W4)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+else()
+    target_compile_options(${PROJECT_NAME}_cli PRIVATE -Wall -Wextra -pedantic -Werror)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
+endif()
+
+if(WITH_UNIT_TESTS)
+    enable_testing()
+
+    file(COPY tests/data DESTINATION ${CMAKE_BINARY_DIR})
+
+    FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.17.0
+    )
+
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
     add_executable(test_version tests/test_version.cpp)
+    target_link_libraries(test_version PRIVATE gtest_main ${PROJECT_NAME})
+    target_include_directories(test_version PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-    set_target_properties(test_version PROPERTIES
-            CXX_STANDARD 23
-            CXX_STANDARD_REQUIRED ON
-    )
-    target_include_directories(test_version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-    set_target_properties(test_version PROPERTIES
-            COMPILE_DEFINITIONS BOOST_TEST_DYN_LINK
-            INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR}
-    )
+    if(MSVC)
+        target_compile_options(test_version PRIVATE /W4)
+    else()
+        target_compile_options(test_version PRIVATE -Wall -Wextra -pedantic -Werror)
+    endif()
 
-    target_link_libraries(test_version
-            ${Boost_LIBRARIES}
-            helloworld
-    )
+    include(GoogleTest)
+    gtest_discover_tests(test_version)
 endif()
 
-if (MSVC)
-    target_compile_options(helloworld_cli PRIVATE
-            /W4
-    )
-    target_compile_options(helloworld PRIVATE
-            /W4
-    )
-    if(WITH_BOOST_TEST)
-        target_compile_options(test_version PRIVATE
-                /W4
-        )
-    endif()
-else ()
-    target_compile_options(helloworld_cli PRIVATE
-            -Wall -Wextra -pedantic -Werror
-    )
-    target_compile_options(helloworld PRIVATE
-            -Wall -Wextra -pedantic -Werror
-    )
-    if(WITH_BOOST_TEST)
-        target_compile_options(test_version PRIVATE
-                -Wall -Wextra -pedantic -Werror
-        )
-    endif()
-endif()
+install(TARGETS ${PROJECT_NAME}_cli RUNTIME DESTINATION bin)
 
-install(TARGETS helloworld_cli RUNTIME DESTINATION bin)
-
-set(CPACK_GENERATOR DEB)
+# CPack (DEB)
+include(InstallRequiredSystemLibraries)
+set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_CONTACT example@example.com)
+set(CPACK_PACKAGE_CONTACT "kiselev.sd@racoonatwork.ru")
 include(CPack)
-
-if(WITH_BOOST_TEST)
-    enable_testing()
-    add_test(test_version test_version)
-endif()
