@@ -5,6 +5,7 @@
 #include <expected>
 #include <ranges>
 #include <compare>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -30,12 +31,12 @@ public:
 
     auto operator<=>(IP const&) const = default;
 
-    template <typename Cont>
-    static void sort_reverse_lex(Cont &c) {
-        std::sort(std::begin(c), std::end(c),
-                  [](IP const &a, IP const &b) {
-                      return (a <=> b) > 0; // larger first
-                  });
+    template <std::ranges::random_access_range Cont>
+    static void sort_reverse_lex(Cont& c) {
+        std::ranges::sort(c,
+            [](const IP& a, const IP& b) {
+                return b.collapsed_ip_ < a.collapsed_ip_;
+            });
     }
 
     [[nodiscard]] auto bytes() const noexcept { return split_ip_; }
@@ -43,6 +44,7 @@ public:
 
 private:
     std::array<int, 4> split_ip_{0, 0, 0, 0};
+    uint32_t collapsed_ip_;
 };
 
 inline std::expected<IP, ParseError> make_ip(auto &&split_ip) {

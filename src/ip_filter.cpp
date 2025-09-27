@@ -39,7 +39,11 @@ std::expected<int, ParseError> parse_octet(std::string_view string_int) {
 }
 
 // IP implementation
-IP::IP(std::array<int, 4> ip): split_ip_{ip} {
+IP::IP(std::array<int, 4> ip): split_ip_{ip}, collapsed_ip_(0) {
+    collapsed_ip_ = (static_cast<std::uint32_t>(split_ip_[3])) |
+                (static_cast<std::uint32_t>(split_ip_[2]) << 8) |
+                (static_cast<std::uint32_t>(split_ip_[1]) << 16) |
+                (static_cast<std::uint32_t>(split_ip_[0]) << 24);
 }
 
 std::string IP::to_string() const {
