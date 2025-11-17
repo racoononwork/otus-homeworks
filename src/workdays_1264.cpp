@@ -12,18 +12,15 @@ void solve_1264_with_list() {
     MyList<long long, Allocator> params_list;
     long long N, M;
 
-    // 1. Ввод и запись в MyList
     if (!(std::cin >> N >> M)) return;
 
     params_list.push_back(N);
     params_list.push_back(M);
 
-    // 2. Получение данных из MyList
     auto it = params_list.begin();
     N = *it; ++it;
     M = *it;
 
-    // 3. Вычисление: N * (M + 1)
     long long total_seconds = N * (M + 1);
 
     std::cout << total_seconds << std::endl;
