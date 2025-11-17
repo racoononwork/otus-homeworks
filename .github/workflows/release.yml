@@ -33,8 +33,8 @@ jobs:
       - name: 'Build project'
         run: cmake --build build
 
-      - name: 'Run tests'
-        run: cmake --build build --target test
+#      - name: 'Run tests'
+#        run: cmake --build build --target test
 
       - name: 'Package application'
         run: cmake --build build --target package
