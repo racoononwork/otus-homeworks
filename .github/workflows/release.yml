@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debian-package
-          path: ./build/ip_filter-*-Linux.deb # Use a wildcard to match the generated file name
+          path: ./build/*-Linux.deb # Use a wildcard to match the generated file name
 
   # Job 2: Create a release if tests pass on the main branch 🚀
   release:
