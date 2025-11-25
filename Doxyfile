@@ -1,0 +1,31 @@
+# Doxyfile configuration file for Doxygen
+
+# Project settings
+PROJECT_NAME           = "Print IP"
+PROJECT_BRIEF          = "A simple C++ project to print IP addresses in various formats."
+PROJECT_LOGO           = "./logo.png"
+OUTPUT_DIRECTORY       = ./docs
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+
+# Input settings
+INPUT                  = ./src
+FILE_PATTERNS          = *.cpp *.h
+EXCLUDE_PATTERNS       = */build/*
+
+# HTML settings
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_HEADER            = ""
+HTML_FOOTER            = ""
+
+# DOT and Graphviz settings
+HAVE_DOT               = YES
+DOT_GRAPH_MAX_NODES    = 100
+DOT_TRANSPARENT        = YES
+DOT_FONTSIZE           = 12
+DOT_SPECIALCHARACTERS  = YES
+
+# Other configurations
+GENERATE_TREEVIEW      = YES
+EXTRACT_PRIVATE        = NO

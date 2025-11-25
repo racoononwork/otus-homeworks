@@ -6,8 +6,10 @@ on:
       - main
       - 'feature/**' # Also run on feature branches
 
+permissions:
+  contents: write
+
 jobs:
-  # Job 1: Build the code and run tests 🧪
   build_and_test:
     runs-on: ubuntu-latest
 
@@ -85,3 +87,22 @@ jobs:
           asset_path: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
           asset_name: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
           asset_content_type: application/vnd.debian.binary-package
+
+  build_docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen and Graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Documentation
+        run: doxygen Doxyfile
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/html
