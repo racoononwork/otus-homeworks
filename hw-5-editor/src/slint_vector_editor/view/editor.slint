@@ -1,0 +1,54 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+struct VisualShape {
+    x: length,
+    y: length,
+    w: length,
+    h: length,
+    is_rect: bool,
+}
+
+export component MainWindow inherits Window {
+    title: "Vector Editor ECS";
+    width: 800px;
+    height: 600px;
+
+    in property <[VisualShape]> shapes_model;
+    callback new_doc();
+    callback open_doc();
+    callback save_doc();
+    callback add_line();
+    callback add_rect();
+
+    VerticalBox {
+        // Панель инструментов
+        HorizontalBox {
+            alignment: start;
+            height: 40px;
+            Button { text: "New"; clicked => { root.new_doc(); } }
+            Button { text: "Open"; clicked => { root.open_doc(); } }
+            Button { text: "Save"; clicked => { root.save_doc(); } }
+            Rectangle { width: 20px; } // spacer
+            Button { text: "+ Line"; clicked => { root.add_line(); } }
+            Button { text: "+ Rect"; clicked => { root.add_rect(); } }
+        }
+
+        // Холст
+        Rectangle {
+            background: white;
+            border-color: black;
+            border-width: 1px;
+            
+            for shape in root.shapes_model : Rectangle {
+                x: shape.x;
+                y: shape.y;
+                width: shape.is_rect ? shape.w : shape.w; // Упрощено для примера
+                height: shape.is_rect ? shape.h : 2px;
+                background: shape.is_rect ? blue : red;
+                
+                // Для линии используем поворот или SVG путь в реальном проекте,
+                // здесь упрощенная отрисовка прямоугольниками
+            }
+        }
+    }
+}

@@ -26,7 +26,6 @@ jobs:
   # 1. Сборка, тестирование и создание deb-пакета
   build_and_test:
     runs-on: ubuntu-latest
-
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
@@ -34,17 +33,20 @@ jobs:
           submodules: true
 
       - name: 'Install dependencies'
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev libslint-dev
 
       - name: 'Configure CMake'
         env:
           # Set g++-14 as the compiler for this workflow
           CXX: g++-14
         run: |
+          # Используем PROJECT_VERSION_PATCH (run_number) для версионирования CPack
+          cd hw-5-editor;
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DPATCH_VERSION=${{ github.run_number }} \
             -DWITH_UNIT_TESTS=ON
+          cd -;
 
       - name: 'Build project'
         run: cmake --build build
@@ -53,13 +55,13 @@ jobs:
       #        run: cmake --build build --target test
 
       - name: 'Package application'
-        run: cmake --build build --target package
+        run: cd hw-5-editor && cmake --build build --target package && cd -;
 
       - name: 'Upload artifact'
         uses: actions/upload-artifact@v4
         with:
           name: debian-package
-          path: ./build/*-Linux.deb # Use a wildcard to match the generated file name
+          path: ./hw-5-editor/build/*.deb # Использование .deb вместо *-Linux.deb для лучшей совместимости
 
   # 2. Создание релиза
   release:
@@ -68,7 +70,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - name: 'Download artifact'
         uses: actions/download-artifact@v6
@@ -77,7 +78,8 @@ jobs:
 
       - name: 'Get package name'
         id: get_package_name
-        run: echo "PACKAGE_NAME=$(ls *.deb)" >> $GITHUB_OUTPUT
+        # Используем wildcard, чтобы найти сгенерированный debian-пакет
+        run: echo "PACKAGE_NAME=$(ls ./hw-5-editor/build/*.deb | xargs basename)" >> $GITHUB_OUTPUT
 
       - name: 'Create Release'
         id: create_release
@@ -85,8 +87,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
+          tag_name: v0.0.${{ github.run_number }}
+          release_name: Release v0.0.${{ github.run_number }}
           draft: false
           prerelease: false
 
@@ -95,47 +97,46 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # Теперь путь к файлу берется из `hw-5-editor/build/`
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
+          asset_path: ./hw-5-editor/build/${{ steps.get_package_name.outputs.PACKAGE_NAME }}
           asset_name: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
           asset_content_type: application/vnd.debian.binary-package
 
   # 3. Сборка Doxygen
-  build_docs:
-    runs-on: ubuntu-latest
+  # build_docs:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #     - name: Install Doxygen and Graphviz
+  #       run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
 
-      - name: Install Doxygen and Graphviz
-        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+  #     - name: Generate Documentation
+  #       run: doxygen Doxyfile # Предполагаем наличие Doxyfile в корне
 
-      - name: Generate Documentation
-        run: doxygen Doxyfile # Генерирует в ./docs/html (согласно Doxyfile)
+  #     # Шаг 1: Загрузка HTML-документации как артефакта Pages
+  #     - name: Upload Pages Artifact
+  #       uses: actions/upload-pages-artifact@v3
+  #       with:
+  #         # Загружаем содержимое папки, куда Doxygen сгенерировал HTML
+  #         path: ./docs/html # Предполагаем, что Doxygen генерирует в docs/html
 
-      # Шаг 1: Загрузка HTML-документации как артефакта Pages
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Загружаем содержимое папки, куда Doxygen сгенерировал HTML
-          path: ./docs/html
+  # # 4. Развертывание Doxygen на GitHub Pages
+  # deploy_docs:
+  #   # Запускается только после успешной сборки документации и только для ветки main
+  #   needs: build_docs
+  #   if: github.ref == 'refs/heads/main'
 
-  # 4. Развертывание Doxygen на GitHub Pages
-  deploy_docs:
-    # Запускается только после успешной сборки документации и только для ветки main
-    needs: build_docs
-    if: github.ref == 'refs/heads/main'
+  #   # Настройки среды Pages
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
 
-    # Настройки среды Pages
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-    
-    steps:
-      # Шаг 2: Развертывание Pages из загруженного артефакта
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     # Шаг 2: Развертывание Pages из загруженного артефакта
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4
