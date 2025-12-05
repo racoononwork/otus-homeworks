@@ -33,7 +33,7 @@ jobs:
           submodules: true
 
       - name: 'Install dependencies'
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev  build-essential  libatomic1
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev build-essential cmake libssl-dev zlib1g-dev  libatomic1
 
       - name: 'Configure CMake'
         env:
