@@ -33,7 +33,8 @@ jobs:
           submodules: true
 
       - name: 'Install dependencies'
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev capnproto build-essential cmake libssl-dev zlib1g-dev  libatomic1
+        # ИСПРАВЛЕНИЕ: Используем libcapnp-dev, который содержит CMake-конфигурационные файлы
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev build-essential cmake libssl-dev zlib1g-dev  libatomic1
 
       - name: 'Configure CMake'
         env:
@@ -49,7 +50,8 @@ jobs:
           cd -;
 
       - name: 'Build project'
-        run: cmake --build build
+        # ИСПРАВЛЕНИЕ: Переходим в директорию hw-5-editor для сборки
+        run: cd hw-5-editor && cmake --build build && cd -;
 
       #      - name: 'Run tests'
       #        run: cmake --build build --target test
