@@ -33,7 +33,7 @@ jobs:
           submodules: true
 
       - name: 'Install dependencies'
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev libslint-dev
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev 
 
       - name: 'Configure CMake'
         env:
