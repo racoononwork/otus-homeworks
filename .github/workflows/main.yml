@@ -34,7 +34,14 @@ jobs:
 
       - name: 'Install dependencies'
         # ИСПРАВЛЕНИЕ: Используем libcapnp-dev, который содержит CMake-конфигурационные файлы
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev build-essential cmake libssl-dev zlib1g-dev  libatomic1
+        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev build-essential cmake libssl-dev zlib1g-dev  libatomic1; \
+          curl -O https://capnproto.org/capnproto-c++-1.2.0.tar.gz; \
+          tar zxf capnproto-c++-1.2.0.tar.gz; \
+          cd capnproto-c++-1.2.0; \
+          ./configure; \
+          make -j6 check; \
+          sudo make install;
+
 
       - name: 'Configure CMake'
         env:
