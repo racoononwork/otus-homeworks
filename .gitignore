@@ -15,7 +15,7 @@ build
 .vscode
 .idea
 usr
-
+cmake-build-*
 **/build
 **/usr
 example.vec

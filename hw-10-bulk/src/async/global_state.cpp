@@ -6,74 +6,85 @@
 
 namespace async::detail {
 using Clock = std::chrono::system_clock;
+    void log_worker(GlobalState& g) {
+        std::shared_ptr<spdlog::logger> logger = g.console_logger();
+        CommandBlock block;
 
-// Task убираем — используем обычные циклы
-void log_worker(GlobalState& g) {
-    std::shared_ptr<spdlog::logger> logger = g.console_logger();
-    CommandBlock block;
-
-    while (g.running()) {
-        if (g.log_queue().try_pop(block)) {
+        while (g.running()) {
+            block = g.log_queue().pop();
             if (block.is_shutdown_marker) break;
-            for (const auto& cmd : block.commands) {
-                logger->info("ctx{}: {}", block.context_id, cmd);
+
+            // ✅ Правильный формат "bulk: 0, 1, 2"
+            std::string cmds;
+            for (size_t i = 0; i < block.commands.size(); ++i) {
+                if (i > 0) cmds += ", ";
+                cmds += block.commands[i];
             }
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            logger->info("bulk: {}", cmds);
         }
     }
-}
 
-void file_worker(GlobalState& g, int thread_id) {
-    // Уникальное имя файла
+    void file_worker(GlobalState& g, int thread_id) {
+    // ✅ Глобальное уникальное имя: file1_193301_12345
     auto now = Clock::now();
     auto now_t = std::chrono::system_clock::to_time_t(now);
     std::tm tm = *std::localtime(&now_t);
-    char buf[64];
-    std::strftime(buf, sizeof(buf), "%Y%m%d_%H%M%S", &tm);
-    std::string fname = std::format("async_{}_t{}.log", buf, thread_id);
+    char timebuf[32];
+    std::strftime(timebuf, sizeof(timebuf), "%H%M%S", &tm);
+    std::string logger_name = std::format("file{}_{}", thread_id, timebuf);
+    std::string fname = std::format("async_{}_t{}.log", timebuf, thread_id);
 
+    // ✅ НЕ регистрируем в console_logger!
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(fname, true);
-    auto logger = std::make_shared<spdlog::logger>(std::format("file{}", thread_id), file_sink);
+    auto logger = std::make_shared<spdlog::logger>(logger_name, file_sink);
     logger->set_level(spdlog::level::debug);
-    spdlog::register_logger(logger);
+
+    // ✅ Регистрируем ЛИШЬ ОДИН РАЗ
+    if (!spdlog::get(logger_name)) {
+        spdlog::register_logger(logger);
+    }
+
+    // ✅ Логируем в console БЕЗ регистрации file логгера
+    g.console_logger()->info("File worker {} → {}", thread_id, fname);
 
     CommandBlock block;
     while (g.running()) {
-        if (g.file_queue().try_pop(block)) {
-            if (block.is_shutdown_marker) {
-                logger->info("file{} shutdown", thread_id);
-                break;
-            }
-            for (const auto& cmd : block.commands) {
-                logger->debug("ctx{}: {}", block.context_id, cmd);
-            }
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        block = g.file_queue().pop();  // Блокирующий!
+        if (block.is_shutdown_marker) {
+            logger->info("{} shutdown", logger_name);
+            break;
+        }
+        // ✅ Записываем БЕЗ ctx (как в задании)
+        for (const auto& cmd : block.commands) {
+            logger->debug("{}", cmd);  // Только команда!
         }
     }
 }
 
-// Meyers' Singleton
+
+
 GlobalState& GlobalState::instance() {
     static GlobalState g;
     return g;
 }
 
-// Конструктор без изменений
 GlobalState::GlobalState() {
+    // Console logger (info+)
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::info);
     console_logger_ = std::make_shared<spdlog::logger>("console", console_sink);
     console_logger_->set_level(spdlog::level::info);
     spdlog::register_logger(console_logger_);
 
+    // File logger (debug+) для internal.log
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("async_internal.log", true);
+    file_sink->set_level(spdlog::level::debug);
     file_logger_ = std::make_shared<spdlog::logger>("file", file_sink);
     file_logger_->set_level(spdlog::level::debug);
     spdlog::register_logger(file_logger_);
 }
 
-// Остальные методы без изменений...
+
 std::size_t GlobalState::create_context(std::size_t bulk_size) {
     return emplace_back(bulk_size);
 }
@@ -111,6 +122,8 @@ void GlobalState::ensure_workers_started() {
     bool expected = false;
     if (!running_.compare_exchange_strong(expected, true)) return;
 
+    this->console_logger()->info("Starting workers: log + file1 + file2");
+
     log_thread_ = std::jthread([this](std::stop_token st) {
         log_worker(*this);
     });
@@ -123,6 +136,7 @@ void GlobalState::ensure_workers_started() {
         file_worker(*this, 2);
     });
 }
+
 
 void GlobalState::request_shutdown() {
     if (!running_.exchange(false)) return;

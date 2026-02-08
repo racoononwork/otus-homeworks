@@ -66,7 +66,7 @@ void async::disconnect(handle_t h) {
     using namespace async::detail;
     auto& g = GlobalState::instance();
     auto id = *reinterpret_cast<std::size_t*>(h);
-    delete reinterpret_cast<std::size_t*>(h);
+    // delete reinterpret_cast<std::size_t*>(h);
 
     ContextState st;
     if (auto st_res = g.take_and_erase_context(id); !st_res.has_value()) { return; } else {

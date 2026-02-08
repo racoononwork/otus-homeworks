@@ -54,12 +54,20 @@ namespace async::detail {
             cv_.notify_one();
         }
 
-        bool try_pop(T& value) {
+        // ✅ БЛОКИРУЮЩИЙ pop() — основной метод
+        T pop() {
             std::unique_lock lock(mutex_);
-            if (queue_.empty()) {
-                cv_.wait(lock, [this] { return !queue_.empty(); });
-            }
-            value = std::move(queue_.front());
+            cv_.wait(lock, [this] { return !queue_.empty(); });
+            T item = std::move(queue_.front());
+            queue_.pop_front();
+            return item;
+        }
+
+        // ✅ Неблокирующий для shutdown проверки
+        bool try_pop(T& item) {
+            std::unique_lock lock(mutex_);
+            if (queue_.empty()) return false;
+            item = std::move(queue_.front());
             queue_.pop_front();
             return true;
         }
@@ -69,5 +77,6 @@ namespace async::detail {
         std::deque<T> queue_;
         std::condition_variable cv_;
     };
+
 
 } // namespace async::detail
