@@ -8,7 +8,6 @@ find_package(spdlog REQUIRED)
 find_package(Boost REQUIRED COMPONENTS  filesystem program_options regex)
 find_package(Threads REQUIRED)
 
-# Библиотека async
 add_library(async src/async/async.cpp src/async/global_state.cpp)
 target_link_libraries(async PUBLIC spdlog::spdlog Threads::Threads)
 target_include_directories(async PUBLIC
@@ -16,7 +15,6 @@ target_include_directories(async PUBLIC
         $<INSTALL_INTERFACE:include>
 )
 
-# Сервер bulk_server
 add_executable(bulk_server src/bulk_server.cpp src/async/session.cpp)
 target_link_libraries(bulk_server PRIVATE
         async
@@ -27,7 +25,6 @@ target_link_libraries(bulk_server PRIVATE
 )
 target_include_directories(bulk_server PRIVATE include)
 
-# Тестовый cli (опционально)
 add_executable(async_cli src/main.cpp)
 target_link_libraries(async_cli PRIVATE async spdlog::spdlog Threads::Threads Boost::filesystem)
 
@@ -37,6 +34,6 @@ install(TARGETS async_cli RUNTIME DESTINATION bin)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "bulk_server")
-set(CPACK_PACKAGE_CONTACT "your.email@example.com")
+set(CPACK_PACKAGE_CONTACT "sdkiselev@racoonatwork.ru")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libspdlog-dev, libboost-all-dev")
 include(CPack)

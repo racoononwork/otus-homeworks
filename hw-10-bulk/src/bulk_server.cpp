@@ -1,7 +1,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include "async/session.hpp"
-#include "async/global_state.hpp"
+#include "../../hw-11-join/include/join_server/session.hpp"
+#include "../../hw-11-join/include/join_server/global_state.hpp"
 #include <iostream>
 #include <thread>
 #include <vector>

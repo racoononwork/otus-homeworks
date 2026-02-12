@@ -1,0 +1,30 @@
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        std::istringstream iss(line);
+        std::string field;
+        std::vector<std::string> fields;
+        
+        while (std::getline(iss, field, ',')) {
+            fields.push_back(field);
+        }
+        
+        if (fields.size() < 8) continue;
+        
+        std::string price_str = fields[8]; // price column
+        try {
+            double price = std::stod(price_str);
+            if (price > 0) {
+                std::cout << "price\t" << price << "\n";
+            }
+        } catch (...) {
+            continue;
+        }
+    }
+    return 0;
+}

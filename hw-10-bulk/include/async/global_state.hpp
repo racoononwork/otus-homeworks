@@ -44,7 +44,6 @@ public:
     GlobalState& operator=(const GlobalState &) = delete;
     static GlobalState& instance();
 
-    // Контексты
     std::size_t create_context(std::size_t bulk_size);
     std::expected<ContextState*, GlobalErrors> find_context(std::size_t id);
     std::expected<ContextState, GlobalErrors> take_and_erase_context(std::size_t id);
@@ -52,22 +51,18 @@ public:
 
     bool has_contexts() const;
 
-    // Очереди
     AsyncQueue<CommandBlock>& log_queue()  { return log_queue_; }
     AsyncQueue<CommandBlock>& file_queue() { return file_queue_; }
 
-    // Worker lifecycle
     void ensure_workers_started();
     void request_shutdown();
 
-    // Логеры
     std::shared_ptr<spdlog::logger> console_logger();
     std::shared_ptr<spdlog::logger> file_logger();
 
     inline std::atomic<bool>& running()  { return running_; }
 private:
     GlobalState();
-    void start_workers_unsafe();
 
 private:
     mutable std::mutex ctx_mutex_;

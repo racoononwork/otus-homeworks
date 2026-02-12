@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "async/session.hpp"
-#include "async/global_state.hpp"
+#include "join_server/session.hpp"
+#include "join_server/global_state.hpp"
 
 void Session::do_read() {
     auto self(shared_from_this());

@@ -1,4 +1,4 @@
-#include "async/global_state.hpp"
+#include "join_server/global_state.hpp"
 #include <format>
 #include <iomanip>
 #include <sstream>
@@ -24,39 +24,36 @@ using Clock = std::chrono::system_clock;
         }
     }
 
-    void file_worker(GlobalState& g, int thread_id) {
-    // ✅ Глобальное уникальное имя: file1_193301_12345
+void file_worker(GlobalState& g, int thread_id) {
     auto now = Clock::now();
     auto now_t = std::chrono::system_clock::to_time_t(now);
     std::tm tm = *std::localtime(&now_t);
     char timebuf[32];
+
     std::strftime(timebuf, sizeof(timebuf), "%H%M%S", &tm);
     std::string logger_name = std::format("file{}_{}", thread_id, timebuf);
     std::string fname = std::format("async_{}_t{}.log", timebuf, thread_id);
 
-    // ✅ НЕ регистрируем в console_logger!
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(fname, true);
     auto logger = std::make_shared<spdlog::logger>(logger_name, file_sink);
     logger->set_level(spdlog::level::debug);
 
-    // ✅ Регистрируем ЛИШЬ ОДИН РАЗ
     if (!spdlog::get(logger_name)) {
         spdlog::register_logger(logger);
     }
 
-    // ✅ Логируем в console БЕЗ регистрации file логгера
     g.console_logger()->info("File worker {} → {}", thread_id, fname);
 
     CommandBlock block;
     while (g.running()) {
-        block = g.file_queue().pop();  // Блокирующий!
+        block = g.file_queue().pop();
         if (block.is_shutdown_marker) {
             logger->info("{} shutdown", logger_name);
             break;
         }
-        // ✅ Записываем БЕЗ ctx (как в задании)
+
         for (const auto& cmd : block.commands) {
-            logger->debug("{}", cmd);  // Только команда!
+            logger->debug("{}", cmd);
         }
     }
 }

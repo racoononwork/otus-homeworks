@@ -42,7 +42,6 @@ namespace async::detail {
         }
     };
 
-    // Простая MPMC очередь с cv (работает с Generator)
     template <typename T>
     class AsyncQueue {
     public:
@@ -54,7 +53,6 @@ namespace async::detail {
             cv_.notify_one();
         }
 
-        // ✅ БЛОКИРУЮЩИЙ pop() — основной метод
         T pop() {
             std::unique_lock lock(mutex_);
             cv_.wait(lock, [this] { return !queue_.empty(); });
@@ -63,7 +61,6 @@ namespace async::detail {
             return item;
         }
 
-        // ✅ Неблокирующий для shutdown проверки
         bool try_pop(T& item) {
             std::unique_lock lock(mutex_);
             if (queue_.empty()) return false;

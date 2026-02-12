@@ -12,7 +12,8 @@ public:
     Session(tcp::socket socket, std::size_t bulk_size)
         : socket_(std::move(socket)),
           bulk_size_(bulk_size),
-          handle_(async::connect(bulk_size)) {
+          handle_(async::connect(bulk_size)),
+          buffer_({}) {
     }
 
     void start() {

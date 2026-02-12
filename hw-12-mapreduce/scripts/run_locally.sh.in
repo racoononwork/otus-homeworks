@@ -1,0 +1,16 @@
+#!/bin/bash
+
+MODE=$1
+if [ -z "$MODE" ]; then
+    echo "Usage: $0 [mean|variance]"
+    exit 1
+fi
+
+if [ "$MODE" = "mean" ]; then
+    cat input/*.csv | ./bin/mapper_mean | sort | ./bin/reducer_mean
+elif [ "$MODE" = "variance" ]; then
+    cat input/*.csv | ./bin/mapper_variance | sort | ./bin/reducer_variance
+else
+    echo "Unknown mode: $MODE"
+    exit 1
+fi

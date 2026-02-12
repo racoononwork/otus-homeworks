@@ -1,6 +1,6 @@
 
-#include "async/async.h"
-#include "async/global_state.hpp"
+#include "join_server/async.h"
+#include "join_server/global_state.hpp"
 
 #include <string>
 #include <ranges>
@@ -30,6 +30,7 @@ void async::receive(handle_t h, const char* data, std::size_t size) {
     buffer.append(st->tail);
     buffer.append(chunk);
 
+    // TODO: check if it can be bottle neck with -O2 or not
     auto splitted = buffer | std::views::split('\n')
                            | std::views::transform([](auto&& rng) {
                                  return std::string(std::ranges::begin(rng), std::ranges::end(rng));
@@ -66,7 +67,6 @@ void async::disconnect(handle_t h) {
     using namespace async::detail;
     auto& g = GlobalState::instance();
     auto id = *reinterpret_cast<std::size_t*>(h);
-    // delete reinterpret_cast<std::size_t*>(h);
 
     ContextState st;
     if (auto st_res = g.take_and_erase_context(id); !st_res.has_value()) { return; } else {
