@@ -1,0 +1,139 @@
+name: Project CI (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      project-dir:
+        required: true
+        type: string
+        description: "Subdirectory of the project (e.g., hw-5-editor)"
+      project-name:
+        required: true
+        type: string
+        description: "Display name for the project"
+      extra-deps:
+        required: false
+        type: string
+        default: ""
+        description: "Space-separated list of additional apt packages"
+      needs-capnp:
+        required: false
+        type: boolean
+        default: false
+        description: "Whether to build and install Cap'n Proto from source"
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+        description: "Whether to run tests"
+    outputs:
+      package-path:
+        description: "Path to the generated package"
+        value: ${{ jobs.build.outputs.package-path }}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      package-path: ${{ steps.package.outputs.path }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-14 cmake build-essential ${{ inputs.extra-deps }}
+
+      - name: Install Cap'n Proto (if needed)
+        if: ${{ inputs.needs-capnp }}
+        run: |
+          curl -O https://capnproto.org/capnproto-c++-1.2.0.tar.gz
+          tar zxf capnproto-c++-1.2.0.tar.gz
+          cd capnproto-c++-1.2.0
+          ./configure
+          make -j6 check
+          sudo make install
+
+      - name: Configure CMake
+        env:
+          CXX: g++-14
+        run: |
+          cd ${{ inputs.project-dir }}
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPATCH_VERSION=${{ github.run_number }} \
+            -DWITH_UNIT_TESTS=ON
+
+      - name: Build
+        run: |
+          cd ${{ inputs.project-dir }}
+          cmake --build build
+
+      - name: Run tests
+        if: ${{ inputs.run-tests }}
+        run: |
+          cd ${{ inputs.project-dir }}
+          cmake --build build --target test
+
+      - name: Package application
+        run: |
+          cd ${{ inputs.project-dir }}
+          cmake --build build --target package
+
+      - name: Locate package
+        id: package
+        run: |
+          cd ${{ inputs.project-dir }}/build
+          PACKAGE_PATH=$(ls *.deb 2>/dev/null || ls *.tar.gz 2>/dev/null || ls *.zip 2>/dev/null)
+          if [ -z "$PACKAGE_PATH" ]; then
+            echo "No package found!" >&2
+            exit 1
+          fi
+          echo "path=${{ inputs.project-dir }}/build/$PACKAGE_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.project-name }}-package
+          path: ${{ steps.package.outputs.path }}
+
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.project-name }}-package
+
+      - name: Get package name
+        id: pkgname
+        run: echo "name=$(ls *.deb *.tar.gz *.zip 2>/dev/null | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.project-name }}-v0.0.${{ github.run_number }}
+          release_name: "${{ inputs.project-name }} Release v0.0.${{ github.run_number }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.pkgname.outputs.name }}
+          asset_name: ${{ steps.pkgname.outputs.name }}
+          asset_content_type: application/octet-stream

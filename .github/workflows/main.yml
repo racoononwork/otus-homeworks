@@ -1,151 +1,123 @@
-# Название теперь отражает и CI, и публикацию документации
 name: C++ CI / Documentation Deployment
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches:
-      - main
-      - 'feature/**' # Also run on feature branches
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [ main, 'feature/**' ]
   workflow_dispatch:
 
-# Устанавливаем необходимые права доступа для всех jobs
 permissions:
-  contents: write # Для Checkout, Release, Upload Artifact
-  pages: write    # Для развертывания на Pages (action v4)
-  id-token: write # Для аутентификации в Pages (action v4)
+  contents: write
+  pages: write
+  id-token: write
 
-# Разрешаем только одно одновременное развертывание на Pages
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # 1. Сборка, тестирование и создание deb-пакета
-  build_and_test:
+  # This job triggers the reusable workflow for each project
+  build-all-projects:
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - dir: hw-1-helloworld
+            name: helloworld
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-2-ip-filter
+            name: ip-filter
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-3-custom-allocator
+            name: custom-allocator
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-4-doxygen
+            name: doxygen
+            extra-deps: "doxygen graphviz"
+            needs-capnp: false
+            run-tests: false   # No tests likely
+          - dir: hw-5-editor
+            name: editor
+            extra-deps: ""
+            needs-capnp: true
+            run-tests: true
+          - dir: hw-6-matrix
+            name: matrix
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-7-bulk
+            name: bulk
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-8-boost
+            name: boost
+            extra-deps: "libboost-all-dev"
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-9-async
+            name: async
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-10-bulk
+            name: bulk-server
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-11-join
+            name: join-server
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-12-mapreduce
+            name: mapreduce
+            extra-deps: ""
+            needs-capnp: false
+            run-tests: true
+          - dir: hw-13-ML
+            name: fashion-mnist
+            extra-deps: "libeigen3-dev libboost-all-dev libspdlog-dev"
+            needs-capnp: false
+            run-tests: true
+    uses: ./.github/workflows/project-ci.yml
+    with:
+      project-dir: ${{ matrix.project.dir }}
+      project-name: ${{ matrix.project.name }}
+      extra-deps: ${{ matrix.project.extra-deps }}
+      needs-capnp: ${{ matrix.project.needs-capnp }}
+      run-tests: ${{ matrix.project.run-tests }}
+    secrets: inherit   # Passes GITHUB_TOKEN automatically
+
+  # Documentation job remains separate
+  build_docs:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+      - name: Generate docs
+        run: doxygen Doxyfile   # Make sure Doxyfile exists in root
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/html
+
+  deploy_docs:
+    needs: build_docs
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: 'Install dependencies'
-        # ИСПРАВЛЕНИЕ: Используем libcapnp-dev, который содержит CMake-конфигурационные файлы
-        run: sudo apt-get update && sudo apt-get install -y g++-14 libspdlog-dev libcapnp-dev build-essential cmake libssl-dev zlib1g-dev  libatomic1 curl; \
-          curl -O https://capnproto.org/capnproto-c++-1.2.0.tar.gz; \
-          tar zxf capnproto-c++-1.2.0.tar.gz; \
-          cd capnproto-c++-1.2.0; \
-          ./configure; \
-          make -j6 check; \
-          sudo make install;
-
-
-      - name: 'Configure CMake'
-        env:
-          # Set g++-14 as the compiler for this workflow
-          CXX: g++-14
-        run: |
-          # Используем PROJECT_VERSION_PATCH (run_number) для версионирования CPack
-          cd hw-5-editor;
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DPATCH_VERSION=${{ github.run_number }} \
-            -DWITH_UNIT_TESTS=ON
-          cd -;
-
-      - name: 'Build project'
-        # ИСПРАВЛЕНИЕ: Переходим в директорию hw-5-editor для сборки
-        run: cd hw-5-editor && cmake --build build && cd -;
-
-      #      - name: 'Run tests'
-      #        run: cmake --build build --target test
-
-      - name: 'Package application'
-        run: cd hw-5-editor && cmake --build build --target package && cd -;
-
-      - name: 'Upload artifact'
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-package
-          path: ./hw-5-editor/build/*.deb # Использование .deb вместо *-Linux.deb для лучшей совместимости
-
-  # 2. Создание релиза
-  release:
-    needs: build_and_test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: 'Download artifact'
-        uses: actions/download-artifact@v6
-        with:
-          name: debian-package
-
-      - name: 'Get package name'
-        id: get_package_name
-        # Используем wildcard, чтобы найти сгенерированный debian-пакет
-        run: echo "PACKAGE_NAME=$(ls ./hw-5-editor/build/*.deb | xargs basename)" >> $GITHUB_OUTPUT
-
-      - name: 'Create Release'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v0.0.${{ github.run_number }}
-          release_name: Release v0.0.${{ github.run_number }}
-          draft: false
-          prerelease: false
-
-      - name: 'Upload Release Asset'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # Теперь путь к файлу берется из `hw-5-editor/build/`
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./hw-5-editor/build/${{ steps.get_package_name.outputs.PACKAGE_NAME }}
-          asset_name: ${{ steps.get_package_name.outputs.PACKAGE_NAME }}
-          asset_content_type: application/vnd.debian.binary-package
-
-  # 3. Сборка Doxygen
-  # build_docs:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Install Doxygen and Graphviz
-  #       run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
-
-  #     - name: Generate Documentation
-  #       run: doxygen Doxyfile # Предполагаем наличие Doxyfile в корне
-
-  #     # Шаг 1: Загрузка HTML-документации как артефакта Pages
-  #     - name: Upload Pages Artifact
-  #       uses: actions/upload-pages-artifact@v3
-  #       with:
-  #         # Загружаем содержимое папки, куда Doxygen сгенерировал HTML
-  #         path: ./docs/html # Предполагаем, что Doxygen генерирует в docs/html
-
-  # # 4. Развертывание Doxygen на GitHub Pages
-  # deploy_docs:
-  #   # Запускается только после успешной сборки документации и только для ветки main
-  #   needs: build_docs
-  #   if: github.ref == 'refs/heads/main'
-
-  #   # Настройки среды Pages
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     # Шаг 2: Развертывание Pages из загруженного артефакта
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
