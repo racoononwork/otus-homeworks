@@ -7,7 +7,6 @@
 namespace async::detail {
 using Clock = std::chrono::system_clock;
 
-// Task убираем — используем обычные циклы
 void log_worker(GlobalState& g) {
     std::shared_ptr<spdlog::logger> logger = g.console_logger();
     CommandBlock block;
@@ -25,7 +24,6 @@ void log_worker(GlobalState& g) {
 }
 
 void file_worker(GlobalState& g, int thread_id) {
-    // Уникальное имя файла
     auto now = Clock::now();
     auto now_t = std::chrono::system_clock::to_time_t(now);
     std::tm tm = *std::localtime(&now_t);
@@ -60,7 +58,6 @@ GlobalState& GlobalState::instance() {
     return g;
 }
 
-// Конструктор без изменений
 GlobalState::GlobalState() {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_logger_ = std::make_shared<spdlog::logger>("console", console_sink);
@@ -73,7 +70,6 @@ GlobalState::GlobalState() {
     spdlog::register_logger(file_logger_);
 }
 
-// Остальные методы без изменений...
 std::size_t GlobalState::create_context(std::size_t bulk_size) {
     return emplace_back(bulk_size);
 }

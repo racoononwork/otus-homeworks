@@ -8,8 +8,6 @@
 #include <spdlog/spdlog.h>
 #include <Eigen/Dense>
 
-// Логистическая регрессия (0.85 acc)
-
 class LogRegModel : public Model {
 private:
     Eigen::MatrixXd weights_; // 10 x 785
@@ -26,6 +24,7 @@ public:
         logits.maxCoeff(&max_idx);
         return static_cast<int>(max_idx);
     }
+
 
     double compute_accuracy(const std::string &test_file) override {
         std::ifstream file(test_file);
@@ -69,13 +68,13 @@ private:
             return;
         }
 
-        Eigen::MatrixXd raw(785, 10);
-        for (int i = 0; i < 785 && file.good(); ++i) {
-            for (int j = 0; j < 10; ++j) {
+        Eigen::MatrixXd raw(10, 785);
+        for (int i = 0; i < 10 && file.good(); ++i) {
+            for (int j = 0; j < 785; ++j) {
                 file >> raw(i, j);
             }
         }
-        weights_ = raw.transpose(); // 10x785
+        weights_ = raw;
         spdlog::info("LogReg loaded: 10x785 from {}", path);
     }
 };
@@ -84,14 +83,10 @@ std::unique_ptr<Model> create_logreg_model(const std::string &path) {
     return std::make_unique<LogRegModel>(path);
 }
 
-// MLP (0.89 acc)
-#include "model.hpp"
-#include <fstream>
-#include <spdlog/spdlog.h>
 
 class MLPModel : public Model {
 private:
-    Eigen::MatrixXd w1_, w2_; // 784x128, 128x10
+    Eigen::MatrixXd w1_, w2_;
     std::string name_ = "MLP";
 
 public:
@@ -106,6 +101,7 @@ public:
         output.maxCoeff(&max_idx);
         return static_cast<int>(max_idx);
     }
+
 
     double compute_accuracy(const std::string &test_file) override {
         std::ifstream file(test_file);
@@ -157,15 +153,19 @@ private:
             return;
         }
 
-        Eigen::MatrixXd raw_w1(784, 128), raw_w2(128, 10);
+        Eigen::MatrixXd raw_w1(784, 128);
         for (int i = 0; i < 784 && f1.good(); ++i)
             for (int j = 0; j < 128; ++j) f1 >> raw_w1(i, j);
+
+        // Читаем w2 как 128x10
+        Eigen::MatrixXd raw_w2(128, 10);
         for (int i = 0; i < 128 && f2.good(); ++i)
             for (int j = 0; j < 10; ++j) f2 >> raw_w2(i, j);
 
-        w1_ = raw_w1;
-        w2_ = raw_w2;
-        spdlog::info("MLP loaded: w1=784x128, w2=128x10");
+        w1_ = raw_w1.transpose();
+        w2_ = raw_w2.transpose();
+
+        spdlog::info("MLP loaded: w1=128x784, w2=10x128");
     }
 };
 
@@ -174,6 +174,5 @@ std::unique_ptr<Model> create_mlp_model(const std::string &w1_path, const std::s
 }
 
 
-// Фабрика моделей
 std::unique_ptr<Model> create_model(const std::string &model_type,
                                     const std::string &model_path);

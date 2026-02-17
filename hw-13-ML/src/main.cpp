@@ -22,17 +22,17 @@ int main(int argc, char* argv[]) {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help") || !vm.count("test") || !vm.count("model")) {
+    if (vm.contains("help") || !vm.contains("test") || !vm.contains("model")) {
         std::cout << desc << "\nExamples:\n";
         std::cout << "  " << argv[0] << " -t test.csv -m logreg_coef.txt -type logreg\n";
         std::cout << "  " << argv[0] << " -t test.csv -m w1.txt -w2 w2.txt -type mlp\n";
         return 1;
     }
 
-    std::string test_file = vm["test"].as<std::string>();
-    std::string model_file = vm["model"].as<std::string>();
-    std::string model_type = vm["type"].as<std::string>();
-    std::string w2_file = vm.count("w2") ? vm["w2"].as<std::string>() : "";
+    const std::string test_file = vm["test"].as<std::string>();
+    const std::string model_file = vm["model"].as<std::string>();
+    const std::string model_type = vm["type"].as<std::string>();
+    const std::string w2_file = vm.contains("w2") ? vm["w2"].as<std::string>() : "";
 
     if (!fs::exists(test_file)) {
         std::cerr << "Test file not found: " << test_file << std::endl;

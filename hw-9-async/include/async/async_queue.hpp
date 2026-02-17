@@ -42,7 +42,6 @@ namespace async::detail {
         }
     };
 
-    // Простая MPMC очередь с cv (работает с Generator)
     template <typename T>
     class AsyncQueue {
     public:

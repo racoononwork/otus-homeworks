@@ -52,15 +52,12 @@ public:
 
     bool has_contexts() const;
 
-    // Очереди
     AsyncQueue<CommandBlock>& log_queue()  { return log_queue_; }
     AsyncQueue<CommandBlock>& file_queue() { return file_queue_; }
 
-    // Worker lifecycle
     void ensure_workers_started();
     void request_shutdown();
 
-    // Логеры
     std::shared_ptr<spdlog::logger> console_logger();
     std::shared_ptr<spdlog::logger> file_logger();
 

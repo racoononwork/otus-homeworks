@@ -9,6 +9,9 @@ int main() {
     handle_t c1 = async::connect(3);
     handle_t c2 = async::connect(5);
 
+    spdlog::flush_every(std::chrono::seconds(1));
+
+
     std::thread t1([c1]{
         std::vector<std::string> chunks = {
             "cmd1\ncmd2\n",

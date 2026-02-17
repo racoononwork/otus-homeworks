@@ -26,10 +26,8 @@ int main() {
         return 0;
     }
     
-    // Вычисляем среднее
     double mean = std::accumulate(prices.begin(), prices.end(), 0.0) / prices.size();
     
-    // Вычисляем дисперсию
     double variance = 0;
     for (double price : prices) {
         variance += (price - mean) * (price - mean);

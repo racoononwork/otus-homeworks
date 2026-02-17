@@ -1,7 +1,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include "../../hw-11-join/include/join_server/session.hpp"
-#include "../../hw-11-join/include/join_server/global_state.hpp"
+#include "async/session.hpp"
+#include "async/global_state.hpp"
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -26,7 +26,7 @@ private:
             } else {
                 std::cout << "Accept error: " << ec.message() << std::endl;
             }
-            do_accept();  // Продолжаем принимать
+            do_accept();
         });
     }
 
@@ -43,6 +43,8 @@ int main(int argc, char* argv[]) {
     unsigned short port = std::atoi(argv[1]);
     std::size_t bulk_size = std::atoi(argv[2]);
 
+    spdlog::flush_every(std::chrono::seconds(1));
+
     try {
         std::cout << "Starting bulk_server on port " << port
                   << " with bulk_size=" << bulk_size << std::endl;
@@ -52,7 +54,6 @@ int main(int argc, char* argv[]) {
         boost::asio::io_context io_context{static_cast<int>(std::thread::hardware_concurrency())};
         Server server(io_context, port, bulk_size);
 
-        // Запуск IO в пуле потоков
         std::vector<std::thread> threads;
         for (unsigned i = 0; i < std::thread::hardware_concurrency(); ++i) {
             threads.emplace_back([&io_context] {

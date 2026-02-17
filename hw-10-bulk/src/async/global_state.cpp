@@ -1,4 +1,4 @@
-#include "join_server/global_state.hpp"
+#include "async/global_state.hpp"
 #include <format>
 #include <iomanip>
 #include <sstream>
@@ -7,14 +7,13 @@
 namespace async::detail {
 using Clock = std::chrono::system_clock;
     void log_worker(GlobalState& g) {
-        std::shared_ptr<spdlog::logger> logger = g.console_logger();
+        std::shared_ptr<spdlog::logger> logger = g.file_logger();
         CommandBlock block;
 
         while (g.running()) {
             block = g.log_queue().pop();
             if (block.is_shutdown_marker) break;
 
-            // ✅ Правильный формат "bulk: 0, 1, 2"
             std::string cmds;
             for (size_t i = 0; i < block.commands.size(); ++i) {
                 if (i > 0) cmds += ", ";
@@ -47,15 +46,18 @@ void file_worker(GlobalState& g, int thread_id) {
     CommandBlock block;
     while (g.running()) {
         block = g.file_queue().pop();
+        std::stringstream ss;
+        for (const auto& cmd : block.commands) {
+            ss << cmd  << " ";
+        }
+        logger->info("bulk {}", ss.str());
         if (block.is_shutdown_marker) {
-            logger->info("{} shutdown", logger_name);
+            logger->debug("{} shutdown", logger_name);
             break;
         }
 
-        for (const auto& cmd : block.commands) {
-            logger->debug("{}", cmd);
-        }
     }
+    logger->flush();
 }
 
 

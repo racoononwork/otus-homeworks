@@ -10,14 +10,12 @@ int main() {
         std::string field;
         std::vector<std::string> fields;
 
-        // Парсим CSV строку
         while (std::getline(iss, field, ',')) {
             fields.push_back(field);
         }
 
-        if (fields.size() < 8) continue; // Минимально нужные поля
+        if (fields.size() < 8) continue;
 
-        // price обычно в столбце ~8 (нужно проверить датасет)
         std::string price_str = fields[8]; // price column
         try {
             double price = std::stod(price_str);
