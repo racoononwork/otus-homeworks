@@ -48,7 +48,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-14 cmake build-essential libboost-all-dev libspdlog-dev ${{ inputs.extra-deps }}
+          sudo apt-get install -y g++-14 cmake build-essential libboost-all-dev libspdlog-dev libcatch2-dev ${{ inputs.extra-deps }}
 
       - name: Install Cap'n Proto (if needed)
         if: ${{ inputs.needs-capnp }}
