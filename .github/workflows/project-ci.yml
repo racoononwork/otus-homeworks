@@ -80,7 +80,11 @@ jobs:
         run: |
           cd ${{ inputs.project-dir }}
           cmake --build build --target test
-
+        on:
+          push:
+            paths:
+              - '!${{ inputs.project-dir }}/tests'
+              - '!${{ inputs.project-dir }}/test'
       - name: Package application
         run: |
           cd ${{ inputs.project-dir }}
