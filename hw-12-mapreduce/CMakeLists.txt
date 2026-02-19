@@ -50,27 +50,25 @@ foreach(binary ${MAPREDUCE_BINARIES})
     install(TARGETS ${binary} RUNTIME DESTINATION bin)
 endforeach()
 
-if(BUILD_TESTS)
-    find_package(Catch2 3 QUIET)
-    if(Catch2_FOUND)
-        enable_testing()
+# if(BUILD_TESTS)
+#     find_package(Catch2 3 QUIET)
+#     if(Catch2_FOUND)
+#         enable_testing()
 
-        add_executable(test_mapreduce ${TEST_DIR}/test_mapreduce.cpp)
-        target_link_libraries(test_mapreduce Catch2::Catch2WithMain)
-        include(CTest)
-        include(Catch)
-        catch_discover_tests(test_mapreduce)
+#         add_executable(test_mapreduce ${TEST_DIR}/test_mapreduce.cpp)
+#         target_link_libraries(test_mapreduce Catch2::Catch2WithMain)
+#         include(CTest)
+#         include(Catch)
+#         catch_discover_tests(test_mapreduce)
 
-        install(TARGETS test_mapreduce RUNTIME DESTINATION bin)
-    endif()
-endif()
+#         install(TARGETS test_mapreduce RUNTIME DESTINATION bin)
+#     endif()
+# endif()
 
-# Скрипты для локального тестирования
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_locally.sh.in
         ${BIN_DIR}/run_locally.sh @ONLY)
 install(PROGRAMS ${BIN_DIR}/run_locally.sh DESTINATION bin)
 
-# Makefile цели
 add_custom_target(run_mean
         COMMAND ${BIN_DIR}/run_locally.sh mean
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

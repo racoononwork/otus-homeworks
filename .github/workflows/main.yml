@@ -104,7 +104,7 @@ jobs:
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
       - name: Generate docs
-        run: doxygen Doxyfile   # Make sure Doxyfile exists in root
+        run: cd hw-4-doxygen && doxygen Doxyfile && cp -r docs ../  # Make sure Doxyfile exists in root
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
