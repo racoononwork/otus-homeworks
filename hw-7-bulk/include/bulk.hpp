@@ -8,16 +8,11 @@
 #include <list>
 #include <optional>
 
-#if __has_include(<print>)
-    #include <print>
-    #include <format>
-    using std::print;
-#else
-    template<typename... Args>
-    void print(std::string_view fmt, Args&&... args) {
-        std::cout << "LOG: " << fmt << " (upgrade compiler for std::print)\n";
-    }
-#endif
+
+template<typename... Args>
+void print(std::string_view fmt, Args&&... args) {
+std::cout << "LOG: " << fmt << " (upgrade compiler for std::print)\n";
+}
 
 struct Bulk {
     std::vector<std::string> commands;

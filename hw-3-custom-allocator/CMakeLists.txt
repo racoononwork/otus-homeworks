@@ -67,13 +67,13 @@ function(add_custom_executable TARGET_NAME SOURCE_FILE)
 endfunction()
 
 add_custom_library(${PROJECT_NAME}
-        hw-3-custom-allocator/include/custom_allocator.hxx
-        hw-3-custom-allocator/include/my_list.hxx
-        hw-3-custom-allocator/include/data_structs.hpp
-        hw-3-custom-allocator/src/main.cpp
+        include/custom_allocator.hxx
+        include/my_list.hxx
+        include/data_structs.hpp
+        src/main.cpp
 )
 
-add_custom_executable(${PROJECT_NAME}_cli hw-3-custom-allocator/src/main.cpp)
+add_custom_executable(${PROJECT_NAME}_cli src/main.cpp)
 
 
 

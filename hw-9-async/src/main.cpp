@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#include <spdlog/spdlog.h>
+
 int main() {
     using async::handle_t;
 

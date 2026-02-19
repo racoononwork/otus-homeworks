@@ -51,10 +51,10 @@ jobs:
           sudo add-apt-repository universe -y 
           sudo apt update -y 
           sudo apt install catch2 -y 
-          git clone https://github.com/catchorg/Catch2.git && cd Catch2
+          git clone https://github.com/catchorg/Catch2.git && cd Catch2 && git checkout v2.13.10
           cmake -B build -S . -DBUILD_TESTING=OFF 
           sudo cmake --build build/ --target install
-          sudo apt-get install -y g++-14 cmake build-essential libboost-all-dev libspdlog-dev ${{ inputs.extra-deps }}
+          sudo apt-get install -y g++-14 cmake build-essential libboost-all-dev libspdlog-dev fontconfig ${{ inputs.extra-deps }}
 
       - name: Install Cap'n Proto (if needed)
         if: ${{ inputs.needs-capnp }}

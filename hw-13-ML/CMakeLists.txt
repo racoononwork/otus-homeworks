@@ -27,3 +27,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_CONTACT "sdkiselev@racoonatwork.ru")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libspdlog-dev, libboost-all-dev")
+include(CPack)

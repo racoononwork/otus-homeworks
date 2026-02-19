@@ -59,7 +59,7 @@ function(add_custom_executable TARGET_NAME SOURCE_FILE)
 endfunction()
 
 add_custom_library(${PROJECT_NAME}
-        include/infinity_matrix.hpp
+        include/bulk.hpp
         src/main.cpp
 )
 
