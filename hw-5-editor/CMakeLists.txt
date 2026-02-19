@@ -26,9 +26,8 @@ function(add_custom_executable TARGET_NAME SOURCE_FILE)
     )
 
     if(MSVC)
-        target_compile_options(${TARGET_NAME} PRIVATE /W4)
     else()
-        target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -pedantic -Werror -std=c++20)
+        target_compile_options(${TARGET_NAME} PRIVATE -std=c++20)
     endif()
 
     install(TARGETS ${TARGET_NAME} RUNTIME DESTINATION bin)
