@@ -43,7 +43,7 @@ jobs:
             run-tests: false   # No tests likely
           - dir: hw-5-editor
             name: editor
-            extra-deps: ""
+            extra-deps: "build-essential cmake pkg-config libfontconfig1-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libasound2-dev build-essential cmake pkg-config libfontconfig1-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libasound2-dev curl"
             needs-capnp: true
             run-tests: true
           - dir: hw-6-matrix

@@ -38,16 +38,17 @@ endfunction()
 find_package(Slint QUIET)
 
 if (NOT Slint_FOUND)
-  message("Slint could not be located in the CMake module search path. Downloading it from Git and building it locally")
   include(FetchContent)
   FetchContent_Declare(
     Slint
     GIT_REPOSITORY https://github.com/slint-ui/slint.git
     GIT_TAG release/1
     SOURCE_SUBDIR api/cpp
+    # Опционально: ускоряет сборку, пропуская тесты самого Slint
+    CMAKE_ARGS -DSLINT_BUILD_TESTING=OFF -DSLINT_BUILD_EXAMPLES=OFF
   )
   FetchContent_MakeAvailable(Slint)
-endif (NOT Slint_FOUND)
+endif()
 
 # Dependency Setup: Cap'n Proto (Retained from original file)
 find_package(CapnProto CONFIG REQUIRED)
