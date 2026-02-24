@@ -9,13 +9,7 @@ set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH ${PATCH_VERSION})
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
 option(WITH_UNIT_TESTS "Build unit tests (uses GoogleTest)" ON)
-cmake_minimum_required(VERSION 3.20)
-project(CustomDataStructures VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,11 +25,6 @@ function(add_custom_library TARGET_NAME)
             $<INSTALL_INTERFACE:include>
     )
 
-    if(MSVC)
-        target_compile_options(${TARGET_NAME} INTERFACE /W4)
-    else()
-        target_compile_options(${TARGET_NAME} INTERFACE -Wall -Wextra -pedantic -Werror)
-    endif()
 endfunction()
 
 function(add_custom_executable TARGET_NAME SOURCE_FILE)
@@ -49,11 +38,6 @@ function(add_custom_executable TARGET_NAME SOURCE_FILE)
             $<INSTALL_INTERFACE:include>
     )
 
-    if(MSVC)
-        target_compile_options(${TARGET_NAME} PRIVATE /W4)
-    else()
-        target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -pedantic -Werror)
-    endif()
 
     install(TARGETS ${TARGET_NAME} RUNTIME DESTINATION bin)
 endfunction()
